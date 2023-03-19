@@ -2817,98 +2817,113 @@ module.exports = require("util");
 var __webpack_exports__ = {};
 // This entry need to be wrapped in an IIFE because it need to be isolated against other modules in the chunk.
 (() => {
-const core = __nccwpck_require__(186)
+const core = __nccwpck_require__(186);
 
-let portainerUrl = core.getInput("portainerUrl")
-const accessToken = core.getInput("accessToken")
-const stackId = parseInt(core.getInput("stackId"))
-const endpointId = parseInt(core.getInput("endpointId"))
+let portainerUrl = core.getInput("portainerUrl");
+const accessToken = core.getInput("accessToken");
+const stackId = parseInt(core.getInput("stackId"));
+const endpointId = parseInt(core.getInput("endpointId"));
 
 if (isNaN(stackId)) {
-  core.setFailed("Stack ID must be integer")
-  process.exit(1)
+  core.setFailed("Stack ID must be integer");
+  process.exit(1);
 }
 
-let client
+let client;
 
 if (portainerUrl.includes("http:")) {
-  client = __nccwpck_require__(685)
+  client = __nccwpck_require__(685);
 } else {
-  client = __nccwpck_require__(687)
+  client = __nccwpck_require__(687);
 
   if (!portainerUrl.includes("https:")) {
-    portainerUrl = `https://${portainerUrl}`
+    portainerUrl = `https://${portainerUrl}`;
   }
 }
 
 if (portainerUrl.substring(portainerUrl.length - 1) === "/") {
-  portainerUrl = portainerUrl.substring(0, portainerUrl.length - 1)
+  portainerUrl = portainerUrl.substring(0, portainerUrl.length - 1);
 }
 
-core.setSecret(portainerUrl)
-core.setSecret(accessToken)
+core.setSecret(portainerUrl);
+core.setSecret(accessToken);
 
-client.get(`${portainerUrl}/api/stacks/${stackId}/file`, {
-  headers: {
-    "X-API-Key": accessToken
-  }
-}, (res) => {
-  if (res.statusCode !== 200) {
-    core.setFailed(res.statusMessage)
-    process.exit(2)
-  }
-
-  let result = ""
-  res.setEncoding("utf8")
-  res.on("data", (chunk) => result = result + chunk)
-  res.on("end", () => {
-    let stackFileContent
-
-    try {
-      // noinspection JSUnresolvedVariable
-      stackFileContent = JSON.parse(result).StackFileContent
-
-      if (stackFileContent === undefined) {
-        // noinspection ExceptionCaughtLocallyJS
-        throw Error("Wrong stack file content")
-      }
-    } catch (error) {
-      core.setFailed(error.message)
-      process.exit(4)
-    }
-
-    const postData = JSON.stringify({
-      pullImage: true,
-      stackFileContent
-    })
-
-    const req = client.request(`${portainerUrl}/api/stacks/${stackId}` + (isNaN(endpointId) ? "" : `?endpointId=${endpointId}`), {
-      method: "PUT",
+client
+  .get(
+    `${portainerUrl}/api/stacks/${stackId}/file`,
+    {
       headers: {
         "X-API-Key": accessToken,
-        "Content-Type": "application/json",
-        "Content-Length": Buffer.byteLength(postData)
-      }
-    }, (res) => {
+      },
+    },
+    (res) => {
       if (res.statusCode !== 200) {
-        core.setFailed(res.statusMessage)
-        process.exit(2)
+        core.setFailed(res.statusMessage);
+        process.exit(2);
       }
-    })
-      .on("error", (error) => {
-        core.setFailed(error.message)
-        process.exit(3)
-      })
 
-    req.write(postData)
-    req.end()
-  })
-})
+      let result = "";
+      res.setEncoding("utf8");
+      res.on("data", (chunk) => (result = result + chunk));
+      res.on("end", () => {
+        let stackFileContent;
+
+        try {
+          // noinspection JSUnresolvedVariable
+          stackFileContent = JSON.parse(result).StackFileContent;
+
+          if (stackFileContent === undefined) {
+            // noinspection ExceptionCaughtLocallyJS
+            throw Error("Wrong stack file content");
+          }
+        } catch (error) {
+          core.setFailed(error.message);
+          process.exit(4);
+        }
+
+        const postData = JSON.stringify({
+          pullImage: true,
+          stackFileContent,
+        });
+
+        const req = client
+          .request(
+            `${portainerUrl}/api/stacks/${stackId}` +
+              (isNaN(endpointId) ? "" : `?endpointId=${endpointId}`),
+            {
+              method: "PUT",
+              headers: {
+                "X-API-Key": accessToken,
+                "Content-Type": "application/json",
+                "Content-Length": Buffer.byteLength(postData),
+              },
+            },
+            (res) => {
+              res.on("data", function (chunk) {
+                console.log("BODY: " + chunk);
+              });
+              if (res.statusCode !== 200) {
+                console.log(res);
+                core.setFailed(res.statusMessage);
+                process.exit(2);
+              }
+            }
+          )
+          .on("error", (error) => {
+            core.setFailed(error.message);
+            process.exit(3);
+          });
+
+        req.write(postData);
+        req.end();
+      });
+    }
+  )
   .on("error", (error) => {
-    core.setFailed(error.message)
-    process.exit(3)
+    core.setFailed(error.message);
+    process.exit(3);
   })
-  .end()
+  .end();
 
 })();
 
