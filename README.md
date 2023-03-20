@@ -23,10 +23,10 @@ ID of endpoint (environment). Required if your stack is not in local environment
 ## Example usage
 
 ```yaml
-uses:  wirgen/portainer-stack-redeploy-action@v1.1
+uses: kmaid/portainer-stack-redeploy-action
 with:
-  portainerUrl: 'https://example.com:9443'
-  accessToken: 'ptr_XXXyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyy'
+  portainerUrl: "https://example.com:9443"
+  accessToken: "ptr_XXXyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyy"
   stackId: 8
   endpointId: 3
 ```

@@ -4,8 +4,8 @@
   "description": "Action for request to Portainer API for redeploy stack with pull latest images",
   "main": "dist/index.js",
   "scripts": {
-    "start": "node index.js",
-    "build": "ncc build index.js --license licenses.txt"
+    "start": "node index.ts",
+    "build": "ncc build index.ts --license licenses.txt"
   },
   "keywords": [
     "Github actions",
@@ -19,6 +19,11 @@
   "devDependencies": {
     "@actions/core": "^1.10.0",
     "@actions/github": "^5.1.1",
-    "@vercel/ncc": "^0.36.0"
+    "@types/node": "^18.15.5",
+    "@vercel/ncc": "^0.36.0",
+    "typescript": "^5.0.2"
+  },
+  "dependencies": {
+    "axios": "^1.3.4"
   }
 }
