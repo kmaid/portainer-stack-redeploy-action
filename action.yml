@@ -16,6 +16,10 @@ inputs:
     description: "Endpoint ID"
     required: false
     default: ""
+  repositoryReferenceName:
+    description: "Repository reference name"
+    required: false
+    default: ""
 
 runs:
   using: "node16"

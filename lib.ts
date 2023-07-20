@@ -1,7 +1,13 @@
 import { Axios } from "axios";
 import { Agent } from "https";
 
-export default async (portainerUrl, accessToken, stackId, endpointId) => {
+export default async (
+  portainerUrl,
+  accessToken,
+  stackId,
+  endpointId,
+  repositoryReferenceName
+) => {
   const client = new Axios({
     baseURL: portainerUrl.toString(),
     httpsAgent: new Agent({ rejectUnauthorized: false }),
@@ -20,7 +26,7 @@ export default async (portainerUrl, accessToken, stackId, endpointId) => {
     `/api/stacks/${stackId}/git/redeploy`,
     JSON.stringify({
       Env,
-      RepositoryReferenceName: "",
+      RepositoryReferenceName: repositoryReferenceName,
       RepositoryAuthentication: true,
       RepositoryUsername: Username,
       RepositoryPassword: "",

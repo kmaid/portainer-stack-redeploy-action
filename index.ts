@@ -3,6 +3,7 @@ import lib from "./lib";
 
 const portainerUrl = new URL(getInput("portainerUrl"));
 const accessToken = getInput("accessToken");
+const repositoryReferenceName = getInput("repositoryReferenceName");
 const stackId = parseInt(getInput("stackId"));
 const endpointId = parseInt(getInput("endpointId"));
 
@@ -14,7 +15,13 @@ if (isNaN(stackId)) {
 setSecret(portainerUrl.toString());
 setSecret(accessToken);
 
-lib(portainerUrl, accessToken, stackId, endpointId).catch((error) => {
+lib(
+  portainerUrl,
+  accessToken,
+  stackId,
+  endpointId,
+  repositoryReferenceName
+).catch((error) => {
   setFailed(error.message);
   process.exit(2);
 });

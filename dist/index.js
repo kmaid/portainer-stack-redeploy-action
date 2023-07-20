@@ -9684,7 +9684,7 @@ var __awaiter = (undefined && undefined.__awaiter) || function (thisArg, _argume
 };
 
 
-/* harmony default export */ const lib = ((portainerUrl, accessToken, stackId, endpointId) => __awaiter(void 0, void 0, void 0, function* () {
+/* harmony default export */ const lib = ((portainerUrl, accessToken, stackId, endpointId, repositoryReferenceName) => __awaiter(void 0, void 0, void 0, function* () {
     const client = new axios_Axios({
         baseURL: portainerUrl.toString(),
         httpsAgent: new external_https_.Agent({ rejectUnauthorized: false }),
@@ -9695,7 +9695,7 @@ var __awaiter = (undefined && undefined.__awaiter) || function (thisArg, _argume
     const { Env, GitConfig: { Authentication: { Username }, }, } = JSON.parse((yield client.get(`/api/stacks/${stackId}`)).data);
     const response = yield client.put(`/api/stacks/${stackId}/git/redeploy`, JSON.stringify({
         Env,
-        RepositoryReferenceName: "",
+        RepositoryReferenceName: repositoryReferenceName,
         RepositoryAuthentication: true,
         RepositoryUsername: Username,
         RepositoryPassword: "",
@@ -9714,6 +9714,7 @@ var __awaiter = (undefined && undefined.__awaiter) || function (thisArg, _argume
 
 const portainerUrl = new URL((0,core.getInput)("portainerUrl"));
 const accessToken = (0,core.getInput)("accessToken");
+const repositoryReferenceName = (0,core.getInput)("repositoryReferenceName");
 const stackId = parseInt((0,core.getInput)("stackId"));
 const endpointId = parseInt((0,core.getInput)("endpointId"));
 if (isNaN(stackId)) {
@@ -9722,7 +9723,7 @@ if (isNaN(stackId)) {
 }
 (0,core.setSecret)(portainerUrl.toString());
 (0,core.setSecret)(accessToken);
-lib(portainerUrl, accessToken, stackId, endpointId).catch((error) => {
+lib(portainerUrl, accessToken, stackId, endpointId, repositoryReferenceName).catch((error) => {
     (0,core.setFailed)(error.message);
     process.exit(2);
 });
