@@ -1,5 +1,17 @@
-import { Axios } from "axios";
-import { Agent } from "https";
+import { Agent, setGlobalDispatcher } from "undici";
+
+// Allow self-signed certificates if user hosts Portainer with self-signed TLS
+try {
+  setGlobalDispatcher(
+    new Agent({
+      connect: {
+        rejectUnauthorized: false,
+      },
+    })
+  );
+} catch {
+  // If dispatcher setup fails or is unsupported, continue with default fetch
+}
 
 export interface StackEnv {
   name: string;
@@ -35,26 +47,24 @@ export default async (
   endpointId?: number,
   repositoryReferenceName?: string
 ): Promise<void> => {
-  const client = new Axios({
-    baseURL: portainerUrl.toString(),
-    httpsAgent: new Agent({ rejectUnauthorized: false }),
+  const base = portainerUrl.toString().replace(/\/+$/, "");
+  const stackUrl = new URL(`${base}/api/stacks/${stackId}`);
+
+  const getStackRes = await fetch(stackUrl, {
+    method: "GET",
     headers: {
       "X-API-Key": accessToken,
     },
-    validateStatus: () => true,
   });
 
-  const getStackRes = await client.get(`/api/stacks/${stackId}`);
-  if (getStackRes.status < 200 || getStackRes.status >= 300) {
+  const getStackText = await getStackRes.text();
+  if (!getStackRes.ok) {
     throw new Error(
-      `Failed to fetch stack ${stackId} (${getStackRes.status}): ${getStackRes.data}`
+      `Failed to fetch stack ${stackId} (${getStackRes.status}): ${getStackText}`
     );
   }
 
-  const stackData: StackData =
-    typeof getStackRes.data === "string"
-      ? JSON.parse(getStackRes.data)
-      : getStackRes.data;
+  const stackData: StackData = JSON.parse(getStackText);
 
   const env = stackData.Env ?? [];
   const username = stackData.GitConfig?.Authentication?.Username ?? "";
@@ -74,20 +84,24 @@ export default async (
     prune: true,
   };
 
-  const redeployRes = await client.put(
-    `/api/stacks/${stackId}/git/redeploy`,
-    JSON.stringify(redeployPayload),
-    {
-      headers: {
-        "Content-Type": "application/json",
-      },
-      params: endpointId ? { endpointId } : undefined,
-    }
-  );
+  const redeployUrl = new URL(`${base}/api/stacks/${stackId}/git/redeploy`);
+  if (endpointId) {
+    redeployUrl.searchParams.set("endpointId", String(endpointId));
+  }
 
-  if (redeployRes.status < 200 || redeployRes.status >= 300) {
+  const redeployRes = await fetch(redeployUrl, {
+    method: "PUT",
+    headers: {
+      "X-API-Key": accessToken,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(redeployPayload),
+  });
+
+  const redeployText = await redeployRes.text();
+  if (!redeployRes.ok) {
     throw new Error(
-      `Failed to redeploy stack ${stackId} (${redeployRes.status}): ${redeployRes.data}`
+      `Failed to redeploy stack ${stackId} (${redeployRes.status}): ${redeployText}`
     );
   }
 
