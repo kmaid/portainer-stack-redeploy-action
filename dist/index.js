@@ -9685,48 +9685,76 @@ var __awaiter = (undefined && undefined.__awaiter) || function (thisArg, _argume
 
 
 /* harmony default export */ const lib = ((portainerUrl, accessToken, stackId, endpointId, repositoryReferenceName) => __awaiter(void 0, void 0, void 0, function* () {
+    var _a, _b, _c, _d, _e;
     const client = new axios_Axios({
         baseURL: portainerUrl.toString(),
         httpsAgent: new external_https_.Agent({ rejectUnauthorized: false }),
         headers: {
             "X-API-Key": accessToken,
         },
+        validateStatus: () => true,
     });
-    const { Env, GitConfig: { Authentication: { Username }, }, } = JSON.parse((yield client.get(`/api/stacks/${stackId}`)).data);
-    const response = yield client.put(`/api/stacks/${stackId}/git/redeploy`, JSON.stringify({
-        Env,
-        RepositoryReferenceName: repositoryReferenceName,
-        RepositoryAuthentication: true,
-        RepositoryUsername: Username,
+    const getStackRes = yield client.get(`/api/stacks/${stackId}`);
+    if (getStackRes.status < 200 || getStackRes.status >= 300) {
+        throw new Error(`Failed to fetch stack ${stackId} (${getStackRes.status}): ${getStackRes.data}`);
+    }
+    const stackData = typeof getStackRes.data === "string"
+        ? JSON.parse(getStackRes.data)
+        : getStackRes.data;
+    const env = (_a = stackData.Env) !== null && _a !== void 0 ? _a : [];
+    const username = (_d = (_c = (_b = stackData.GitConfig) === null || _b === void 0 ? void 0 : _b.Authentication) === null || _c === void 0 ? void 0 : _c.Username) !== null && _d !== void 0 ? _d : "";
+    const hasAuth = Boolean(username);
+    const refName = repositoryReferenceName ||
+        ((_e = stackData.GitConfig) === null || _e === void 0 ? void 0 : _e.ReferenceName) ||
+        "refs/heads/master";
+    const redeployPayload = {
+        Env: env,
+        RepositoryReferenceName: refName,
+        RepositoryAuthentication: hasAuth,
+        RepositoryUsername: username,
         RepositoryPassword: "",
         PullImage: true,
         prune: true,
-    }), {
+    };
+    const redeployRes = yield client.put(`/api/stacks/${stackId}/git/redeploy`, JSON.stringify(redeployPayload), {
         headers: {
             "Content-Type": "application/json",
         },
-        params: { endpointId },
+        params: endpointId ? { endpointId } : undefined,
     });
+    if (redeployRes.status < 200 || redeployRes.status >= 300) {
+        throw new Error(`Failed to redeploy stack ${stackId} (${redeployRes.status}): ${redeployRes.data}`);
+    }
+    console.log(`Successfully triggered redeploy for stack ${stackId} (${stackData.Name})`);
 }));
 
 ;// CONCATENATED MODULE: ./index.ts
 
 
-const portainerUrl = new URL((0,core.getInput)("portainerUrl"));
-const accessToken = (0,core.getInput)("accessToken");
-const repositoryReferenceName = (0,core.getInput)("repositoryReferenceName");
-const stackId = parseInt((0,core.getInput)("stackId"));
-const endpointId = parseInt((0,core.getInput)("endpointId"));
-if (isNaN(stackId)) {
-    (0,core.setFailed)("Stack ID must be integer");
+try {
+    const urlInput = (0,core.getInput)("portainerUrl", { required: true });
+    const portainerUrl = new URL(urlInput);
+    const accessToken = (0,core.getInput)("accessToken", { required: true });
+    const repositoryReferenceName = (0,core.getInput)("repositoryReferenceName") || undefined;
+    const stackIdInput = (0,core.getInput)("stackId", { required: true });
+    const endpointIdInput = (0,core.getInput)("endpointId");
+    const stackId = parseInt(stackIdInput, 10);
+    const endpointId = endpointIdInput ? parseInt(endpointIdInput, 10) : undefined;
+    if (isNaN(stackId)) {
+        (0,core.setFailed)("Stack ID must be integer");
+        process.exit(1);
+    }
+    (0,core.setSecret)(portainerUrl.toString());
+    (0,core.setSecret)(accessToken);
+    lib(portainerUrl, accessToken, stackId, endpointId, repositoryReferenceName).catch((error) => {
+        (0,core.setFailed)(error.message);
+        process.exit(2);
+    });
+}
+catch (error) {
+    (0,core.setFailed)(error.message || String(error));
     process.exit(1);
 }
-(0,core.setSecret)(portainerUrl.toString());
-(0,core.setSecret)(accessToken);
-lib(portainerUrl, accessToken, stackId, endpointId, repositoryReferenceName).catch((error) => {
-    (0,core.setFailed)(error.message);
-    process.exit(2);
-});
 
 })();
 

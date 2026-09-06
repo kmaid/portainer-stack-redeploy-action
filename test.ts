@@ -1,8 +1,22 @@
 import lib from "./lib";
 
-// (portainerUrl, accessToken, stackId, endpointId)
 const args = process.argv.slice(2);
-console.log(args);
-lib(args[0], args[1], args[2], args[3], args[4]).catch((error) =>
-  console.log(error)
-);
+if (args.length < 3) {
+  console.log(
+    "Usage: ts-node test.ts <portainerUrl> <accessToken> <stackId> [endpointId] [refName]"
+  );
+  process.exit(1);
+}
+
+lib(
+  new URL(args[0]),
+  args[1],
+  parseInt(args[2], 10),
+  args[3] ? parseInt(args[3], 10) : undefined,
+  args[4]
+)
+  .then(() => console.log("Test succeeded"))
+  .catch((err) => {
+    console.error("Test failed:", err);
+    process.exit(1);
+  });
